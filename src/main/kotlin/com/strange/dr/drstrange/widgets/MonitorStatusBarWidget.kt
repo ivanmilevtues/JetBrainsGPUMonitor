@@ -2,7 +2,9 @@ package com.strange.dr.drstrange.widgets
 
 import com.intellij.openapi.wm.CustomStatusBarWidget
 import com.intellij.ui.JBColor
-import com.intellij.util.ui.JBUI
+import com.strange.dr.drstrange.data.Device
+import org.jocl.*
+import org.jocl.CL.*
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
@@ -16,7 +18,11 @@ class MemoryUsageIndicator : JPanel() {
 
     private val memoryLabel: JLabel = JLabel()
 
+    private val devices: List<Device>
+        get() = java.util.ArrayList()
+
     init {
+        initializeDevices()
         preferredSize = Dimension(200, 30)  // Set preferred width; height will be determined by the status bar
         layout = null // Use absolute positioning
         ToolTipManager.sharedInstance().registerComponent(this) // Register this component for tooltip
@@ -79,6 +85,56 @@ class MemoryUsageIndicator : JPanel() {
 
                 Thread.sleep(1000) // Update every second
             }
+        }
+    }
+
+    companion object {
+        private fun initializeDevices(): List<Device> {
+            val devices = ArrayList<Device>()
+            CL.setExceptionsEnabled(true)
+
+            // Get platform count
+            val platformCountArray = IntArray(1)
+            CL.clGetPlatformIDs(0, null, platformCountArray)
+
+            // Get platforms
+            val platforms = arrayOfNulls<cl_platform_id>(platformCountArray[0])
+            CL.clGetPlatformIDs(platformCountArray[0], platforms, null)
+
+            // Loop through platforms
+            for (platform in platforms) {
+                // Get device count
+                val deviceCountArray = IntArray(1)
+                CL.clGetDeviceIDs(platform, CL.CL_DEVICE_TYPE_ALL, 0, null, deviceCountArray)
+
+                // Get devices
+                val hardwareDevices = arrayOfNulls<cl_device_id>(deviceCountArray[0])
+                CL.clGetDeviceIDs(platform, CL.CL_DEVICE_TYPE_ALL, deviceCountArray[0], hardwareDevices, null)
+
+                // Loop through devices
+                for (device in hardwareDevices) {
+                    // Get device name
+                    val deviceNameBuffer = StringBuilder(256)
+                    val nameSizeArray = LongArray(1)
+
+                    // Query the size of the device name
+                    CL.clGetDeviceInfo(device, CL.CL_DEVICE_NAME, 0, null, nameSizeArray)
+
+                    // Create a buffer of the correct size
+                    val deviceNameBytes = ByteArray(nameSizeArray[0].toInt())
+
+                    // Retrieve the device name
+                    CL.clGetDeviceInfo(device, CL.CL_DEVICE_NAME, nameSizeArray[0], Pointer.to(deviceNameBytes), null)
+                    val totalMemoryArray = LongArray(1)
+                    CL.clGetDeviceInfo(device, CL.CL_DEVICE_GLOBAL_MEM_SIZE, Sizeof.cl_long.toLong(), Pointer.to(totalMemoryArray), null)
+                    val totalMemory = totalMemoryArray[0]
+                    // Convert the byte array to a String
+                    val deviceName = String(deviceNameBytes)
+                    println("Device Name: $deviceName")
+                    println("Device total memory: $totalMemory")
+                }
+            }
+            return devices
         }
     }
 }
