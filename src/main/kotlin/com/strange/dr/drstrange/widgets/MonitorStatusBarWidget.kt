@@ -1,87 +1,101 @@
 package com.strange.dr.drstrange.widgets
+
+import com.intellij.openapi.wm.CustomStatusBarWidget
+import com.intellij.ui.JBColor
+import com.intellij.util.ui.JBUI
+import java.awt.Color
+import java.awt.Dimension
+import java.awt.Graphics
+import java.awt.Graphics2D
+import javax.swing.*
 import kotlin.concurrent.thread
 
-import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.wm.CustomStatusBarWidget
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import javax.swing.JComponent
-import javax.swing.JLabel
-import javax.swing.SwingUtilities
+class MemoryUsageIndicator : JPanel() {
+    private var usedMemoryMB = 0
+    private val totalMemoryMB = 1024  // Total memory in MB
 
-class MonitorStatusBarWidget : CustomStatusBarWidget {
-    // Store the JLabel as a class property
-    private val label = JLabel("GPU Monitor")  // Initial text for the label
-
-    // A variable to simulate dynamic data (e.g., GPU usage)
-    private var counter = 0
+    private val memoryLabel: JLabel = JLabel()
 
     init {
-        // Start a background thread to update the label text every second
-        startUpdatingLabel()
+        preferredSize = Dimension(200, 30)  // Set preferred width; height will be determined by the status bar
+        layout = null // Use absolute positioning
+        ToolTipManager.sharedInstance().registerComponent(this) // Register this component for tooltip
+        toolTipText = "GPU Memory Usage" // Set tooltip text
+
+        // Configure label
+        memoryLabel.foreground = JBColor.foreground()
+        add(memoryLabel)
+
+        // Start a background thread to simulate memory updates
+        startUpdatingMemoryUsage()
     }
 
+    override fun paintComponent(g: Graphics) {
+        super.paintComponent(g)
+        val g2d = g as Graphics2D
+
+        // Calculate used percentage
+        val usedPercentage = usedMemoryMB.toDouble() / totalMemoryMB
+        val barWidth = (width * usedPercentage).toInt() // Width of the filled portion
+
+        // Draw background (default status bar color)
+        g2d.color = JBColor.background() // IDE background color
+
+        g2d.fillRect(0, 0, width, height)
+
+        // Draw used memory as filled rectangle
+        g2d.color = getColorForUsage(usedPercentage) // Set color based on usage
+        g2d.fillRect(0, 0, barWidth, height) // Fill the bar to represent memory usage
+
+        // Update label with used memory
+        memoryLabel.text = "$usedMemoryMB of $totalMemoryMB MB"
+        // Center the label in the panel
+        centerLabel(memoryLabel)
+    }
+
+    // Center the label in the JPanel
+    private fun centerLabel(label: JLabel) {
+        val labelWidth = label.preferredSize.width
+        val labelHeight = label.preferredSize.height
+        label.setBounds((width - labelWidth) / 2, (height - labelHeight) / 2, labelWidth, labelHeight)
+    }
+
+    // Get color based on usage percentage
+    private fun getColorForUsage(usage: Double): Color {
+        return JBColor.GRAY
+    }
+
+    // Simulate memory usage updates in a background thread
+    private fun startUpdatingMemoryUsage() {
+        thread(start = true) {
+            while (true) {
+                // Simulate memory usage (increase by 50 MB, wrap around after exceeding total)
+                usedMemoryMB = (usedMemoryMB + 50) % (totalMemoryMB + 1)
+
+                // Update the component on the EDT
+                SwingUtilities.invokeLater {
+                    repaint() // Repaint to reflect the new memory usage
+                }
+
+                Thread.sleep(1000) // Update every second
+            }
+        }
+    }
+}
+
+// Custom StatusBar Widget using the MemoryUsageIndicator
+class MonitorStatusBarWidget : CustomStatusBarWidget {
+    private val memoryUsageIndicator = MemoryUsageIndicator()
+
     override fun ID(): String {
-        return "GPUMonitor"
+        return "MemoryUsageIndicator"
     }
 
     override fun getComponent(): JComponent {
-        // Set the tooltip text for the label
-        label.toolTipText = "Click to choose option"
-
-        // Add a mouse listener to handle click events
-        label.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                // Show dropdown-like popup when the label is clicked
-                showListPopup(e)
-            }
-        })
-
-        return label
+        return memoryUsageIndicator // Return the memory usage indicator directly
     }
 
     override fun dispose() {
         // Clean up resources if necessary
-    }
-
-    // Method to dynamically update the text of the label
-    fun updateLabelText(newText: String) {
-        // Update label on the Event Dispatch Thread (EDT)
-        SwingUtilities.invokeLater {
-            label.text = newText
-        }
-    }
-
-    // Method to start a background thread that updates the label every second
-    private fun startUpdatingLabel() {
-        thread(start = true) {
-            while (true) {
-                // Simulate some dynamic data (e.g., GPU usage)
-                counter++
-
-                // Update the label text
-                updateLabelText("GPU Usage: $counter%")
-
-                // Sleep for 1 second before updating again
-                Thread.sleep(1000)
-            }
-        }
-    }
-
-    private fun showListPopup(mouseEvent: MouseEvent) {
-        // List of options (similar to the encoding options in UTF-8 popup)
-        val items = listOf("Option 1", "Option 2", "Option 3", "Option 4")
-
-        // Create a ListPopup
-        val popup = com.intellij.openapi.ui.popup.JBPopupFactory.getInstance().createPopupChooserBuilder(items)
-            .setTitle("Choose an Option")
-            .setItemChosenCallback { selectedValue ->
-                // Handle the selection and update the label text dynamically
-                updateLabelText("Selected: $selectedValue")
-            }
-            .createPopup()
-
-        // Show the popup at the location of the click
-        popup.showInScreenCoordinates(mouseEvent.component, mouseEvent.locationOnScreen)
     }
 }
