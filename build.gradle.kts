@@ -21,31 +21,6 @@ intellij {
   plugins.set(listOf(/* Plugin Dependencies */))
 }
 
-dependencies {
-  implementation("org.jocl:jocl:2.0.5")
-  // Add other dependencies here if needed
-}
-
-// You can specify native libraries for each platform if needed
-val osName = System.getProperty("os.name").lowercase(Locale.ENGLISH)
-val arch = System.getProperty("os.arch").lowercase(Locale.ENGLISH)
-
-// Determine the appropriate native library for the OS and architecture
-val nativeLibs = when {
-  osName.contains("win") && arch.contains("64") -> "libs/jocl.dll"
-  osName.contains("win") -> "libs/jocl32.dll"
-  osName.contains("mac") -> "libs/libjocl.dylib"
-  osName.contains("nux") -> "libs/libjocl.so"
-  else -> throw RuntimeException("Unsupported OS or architecture: $osName $arch")
-}
-
-// Load the native library
-tasks.register<JavaExec>("runWithJocl") {
-  classpath = sourceSets.main.get().runtimeClasspath
-  mainClass.set("com.strange.dr.MainKt") // Replace with your main class
-  jvmArgs = listOf("-Djava.library.path=$nativeLibs")
-}
-
 tasks {
   // Set the JVM compatibility versions
   withType<JavaCompile> {

@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.components.ProjectComponent
+import com.strange.dr.GpuStatsManager
 import com.strange.dr.drstrange.widgets.MonitorStatusBarWidget
 
 
