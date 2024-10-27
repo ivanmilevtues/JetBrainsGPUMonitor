@@ -1,11 +1,11 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
   <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-  <id>com.strange.dr.DrStrange</id>
+  <id>pro.ivanmilev.DrStrange</id>
 
   <!-- Public plugin name should be written in Title Case.
        Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-  <name>DrStrange</name>
+  <name>Light GPU Monitor</name>
 
   <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
   <vendor email="ivanmilevtues@gmail.com" url="https://www.ivanmilev.pro">Ivan Milev</vendor>
@@ -20,9 +20,9 @@
        Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
        Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
   <description><![CDATA[
-    <h2>Plugin for monitoring the GPU usage and CPU usage</h2>
+   <h2>Real-Time GPU Usage Monitoring </h2>
     <br>
-    <em>Plugin to showcase the utilization of the GPU and CPU usage.</em>
+    <em>A plugin offering live monitoring of GPU utilization, including GPU memory usage, utilization percent, and power consumption. Get live, minimalistic updates on GPU performance directly within your IDE.</em>
   ]]></description>
 
   <!-- Product and plugin compatibility requirements.

@@ -6,8 +6,8 @@ plugins {
   id("org.jetbrains.intellij") version "1.17.4"
 }
 
-group = "com.strange.dr"
-version = "1.0-SNAPSHOT"
+group = "pro.ivanmilev"
+version = "0.0.1"
 
 repositories {
   mavenCentral()
@@ -16,8 +16,8 @@ repositories {
 // Configure Gradle IntelliJ Plugin
 intellij {
   version.set("2023.2.6")
-  type.set("IC") // Target IDE Platform
-
+  type.set("IC")
+  type.set("PY")
   plugins.set(listOf(/* Plugin Dependencies */))
 }
 
