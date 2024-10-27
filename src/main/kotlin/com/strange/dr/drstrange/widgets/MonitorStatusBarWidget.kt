@@ -1,13 +1,14 @@
 package com.strange.dr.drstrange.widgets
 
 import com.intellij.openapi.wm.CustomStatusBarWidget
+import com.intellij.openapi.wm.StatusBar
 import com.intellij.ui.JBColor
 import com.strange.dr.GpuStatsManager
 import com.strange.dr.drstrange.data.Device
-import java.awt.Color
-import java.awt.Dimension
-import java.awt.Graphics
-import java.awt.Graphics2D
+import org.jetbrains.debugger.createVariablesList
+import java.awt.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.*
 import kotlin.concurrent.thread
 
@@ -17,9 +18,9 @@ class MemoryUsageIndicator : JPanel() {
     private val gpuStatsManager
         get() = GpuStatsManager()
 
-    private var devices: List<Device> = gpuStatsManager.getGpuStats()
+    val popupMenu: JPopupMenu = JPopupMenu()
 
-    private var highestDevice: Device = devices[0]
+    private val devicesInfo: MutableList<JLabel> = mutableListOf()
 
     init {
         preferredSize = Dimension(200, 30)  // Set preferred width; height will be determined by the status bar
@@ -33,11 +34,31 @@ class MemoryUsageIndicator : JPanel() {
 
         // Start a background thread to simulate memory updates
         startUpdatingMemoryUsage()
+
+        initializePopupMenu()
+
+        // Add a mouse listener to handle clicks
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if (e.button == MouseEvent.BUTTON1) { // Show popup on left-click
+                    popupMenu.show(this@MemoryUsageIndicator, 0, -popupMenu.preferredSize.height)
+                }
+            }
+        })
+
     }
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         val g2d = g as Graphics2D
+        val devices = gpuStatsManager.getGpuStats()
+
+        var highestDevice = devices[0]
+        for (device in devices) {
+            if (device.usedMemoryMB / device.totalMemoryMB > highestDevice.usedMemoryMB / highestDevice.totalMemoryMB) {
+                highestDevice = device
+            }
+        }
 
         // Calculate used percentage
         val usedPercentage = highestDevice.usedMemoryMB.toDouble() / highestDevice.totalMemoryMB
@@ -74,15 +95,13 @@ class MemoryUsageIndicator : JPanel() {
     private fun startUpdatingMemoryUsage() {
         thread(start = true) {
             while (true) {
-                // Show only highest use on standard view:
-                var highestDevice = devices[0]
-                for (device in devices) {
-                    if (device.usedMemoryMB / device.totalMemoryMB > highestDevice.usedMemoryMB / highestDevice.totalMemoryMB) {
-                        highestDevice = device
-                    }
-                }
+                val devices = gpuStatsManager.getGpuStats()
 
+                // Show only highest use on standard view:
                 SwingUtilities.invokeLater {
+                    devicesInfo.forEachIndexed { index, label ->
+                        label.text = deviceToLabel(devices[index]).text
+                    }
                     repaint() // Repaint to reflect the new memory usage
                 }
 
@@ -91,6 +110,20 @@ class MemoryUsageIndicator : JPanel() {
         }
     }
 
+    private fun initializePopupMenu() {
+        for (device in gpuStatsManager.getGpuStats()) {
+            devicesInfo.add(deviceToLabel(device))
+        }
+
+        for (deviceInfoLabel in devicesInfo) {
+            popupMenu.add(deviceInfoLabel)
+        }
+    }
+
+    private fun deviceToLabel(device: Device) =
+        JLabel("Dev ${device.id} [${device.name}]. Mem Usage: ${device.usedMemoryMB}/${device.totalMemoryMB} MB. Utilization: ${device.utilizationPercent}%. Power Usage: ${device.powerUsageWatt} W").apply {
+            border = BorderFactory.createEmptyBorder(5, 0, 5, 0)
+        }
 }
 
 // Custom StatusBar Widget using the MemoryUsageIndicator
