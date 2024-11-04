@@ -50,6 +50,11 @@ class MemoryUsageIndicator : JPanel() {
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
+        if(!gpuStatsManager.isCompatible()) {
+            memoryLabel.text = "Incompatible device."
+            centerLabel(memoryLabel)
+            return
+        }
         val g2d = g as Graphics2D
         val devices = gpuStatsManager.getGpuStats()
 
@@ -93,6 +98,12 @@ class MemoryUsageIndicator : JPanel() {
 
     // Simulate memory usage updates in a background thread
     private fun startUpdatingMemoryUsage() {
+        if (!gpuStatsManager.isCompatible()) {
+            devicesInfo.forEach { label ->
+                label.text = "Incompatible device."
+            }
+            return
+        }
         thread(start = true) {
             while (true) {
                 val devices = gpuStatsManager.getGpuStats()
@@ -111,6 +122,10 @@ class MemoryUsageIndicator : JPanel() {
     }
 
     private fun initializePopupMenu() {
+        if (!gpuStatsManager.isCompatible()) {
+            devicesInfo.add(JLabel("It looks like your GPU or OS isn't currently supported. We're working on adding integration for your setup—stay tuned!"))
+        }
+
         for (device in gpuStatsManager.getGpuStats()) {
             devicesInfo.add(deviceToLabel(device))
         }

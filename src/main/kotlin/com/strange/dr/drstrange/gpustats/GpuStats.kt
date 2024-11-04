@@ -8,6 +8,7 @@ class GpuStatsManager {
 
     fun getGpuStats(): List<Device> {
         val gpuStatsList = mutableListOf<Device>()
+        if (!isCompatible()) return gpuStatsList
         try {
             // Execute nvidia-smi command to get GPU stats in a formatted way
             val process = ProcessBuilder(
@@ -45,26 +46,16 @@ class GpuStatsManager {
         return gpuStatsList
     }
 
-    fun getDeviceNames(): List<String> {
-        val gpuNames = mutableListOf<String>()
+    fun isCompatible(): Boolean =
         try {
-            // Execute nvidia-smi command
-            val process = ProcessBuilder("nvidia-smi", "--query-gpu=name", "--format=csv,noheader").start()
+            val process = ProcessBuilder("nvidia-smi").start()
             val reader = BufferedReader(InputStreamReader(process.inputStream))
-            var line: String?
-
-            // Read the output line by line
-            while (reader.readLine().also { line = it } != null) {
-                gpuNames.add(line!!)
-            }
-
-            // Wait for the process to finish
+            val output = reader.readText()
             process.waitFor()
+            output.isNotEmpty()
         } catch (e: Exception) {
-            e.printStackTrace()
+            false
         }
-        return gpuNames
-    }
 }
 
 private fun String.splitToDouble() = this.split(" ")[0].toDouble()
